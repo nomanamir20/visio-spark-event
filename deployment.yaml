@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visio-spark
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: visio-spark }
+  template:
+    metadata:
+      labels: { app: visio-spark }
+    spec:
+      containers:
+        - name: visio-spark
+          image: nomanamir/visio-spark-event:latest
+          ports: [{ containerPort: 3000 }]
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 5

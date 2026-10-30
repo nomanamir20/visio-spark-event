@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visio Spark Event</title>
+<style>
+  :root { --red:#d7263d; --brown:#6b3e26; --green:#1b998b; --lime:#a7c957; --cream:#fff4e0; --gold:#f4a261; }
+  * { box-sizing:border-box; margin:0; font-family:'Segoe UI',Arial,sans-serif; }
+  body { background:var(--cream); color:var(--brown); }
+  header { background:linear-gradient(120deg,var(--red),var(--brown) 55%,var(--green));
+           color:#fff; padding:48px 20px; text-align:center; }
+  header h1 { font-size:2.8rem; letter-spacing:2px; }
+  header h1 span { color:var(--gold); }
+  header p { margin-top:8px; opacity:.9; }
+  .stats { display:flex; gap:16px; justify-content:center; margin:-30px 20px 20px; flex-wrap:wrap; }
+  .stat { background:#fff; border-radius:14px; padding:18px 32px; text-align:center;
+          box-shadow:0 6px 18px rgba(0,0,0,.15); border-bottom:5px solid var(--green); }
+  .stat:nth-child(2){ border-color:var(--red);} .stat:nth-child(3){ border-color:var(--brown);}
+  .stat b { font-size:2rem; display:block; color:var(--red); }
+  main { max-width:1000px; margin:auto; padding:20px; }
+  form { background:#fff; padding:20px; border-radius:14px; display:grid;
+         grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;
+         box-shadow:0 4px 14px rgba(0,0,0,.1); border-top:5px solid var(--lime); }
+  input, select { padding:10px; border:2px solid var(--lime); border-radius:8px; }
+  button { background:var(--green); color:#fff; border:none; padding:10px 16px;
+           border-radius:8px; cursor:pointer; font-weight:bold; transition:.2s; }
+  button:hover { background:var(--red); transform:translateY(-2px); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px; margin-top:24px; }
+  .card { background:#fff; border-radius:14px; padding:20px; position:relative;
+          box-shadow:0 4px 14px rgba(0,0,0,.12); border-left:8px solid var(--red); transition:.2s; }
+  .card:nth-child(3n+2){ border-color:var(--green);} .card:nth-child(3n){ border-color:var(--brown);}
+  .card:hover { transform:translateY(-5px); }
+  .tag { background:var(--gold); color:var(--brown); padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:bold; }
+  .card h3 { margin:10px 0 6px; color:var(--red); }
+  .del { position:absolute; top:12px; right:12px; background:var(--red); padding:4px 10px; }
+  footer { text-align:center; padding:24px; background:var(--brown); color:var(--cream); margin-top:40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Visio <span>Spark</span> Event</h1>
+  <p>Plan it. Launch it. Spark it. 🔥</p>
+</header>
+<div class="stats">
+  <div class="stat"><b id="total">0</b>Total Events</div>
+  <div class="stat"><b id="cats">0</b>Categories</div>
+  <div class="stat"><b id="upcoming">0</b>Upcoming</div>
+</div>
+<main>
+  <form id="f">
+    <input id="name" placeholder="Event name" required>
+    <input id="date" type="date" required>
+    <input id="venue" placeholder="Venue">
+    <select id="category"><option>Tech</option><option>Culture</option><option>Sports</option><option>Workshop</option></select>
+    <button>＋ Add Event</button>
+  </form>
+  <div class="grid" id="list"></div>
+</main>
+<footer>© 2026 Visio Spark Event · Deployed via Jenkins CI/CD on Kubernetes</footer>
+<script>
+async function load(){
+  const ev = await (await fetch('/api/events')).json();
+  document.getElementById('total').textContent = ev.length;
+  document.getElementById('cats').textContent = new Set(ev.map(e=>e.category)).size;
+  document.getElementById('upcoming').textContent = ev.filter(e=>new Date(e.date)>=new Date()).length;
+  document.getElementById('list').innerHTML = ev.map(e=>`
+    <div class="card"><button class="del" onclick="del(${e.id})">✕</button>
+      <span class="tag">${e.category}</span><h3>${e.name}</h3>
+      <p>📅 ${e.date}</p><p>📍 ${e.venue}</p></div>`).join('');
+}
+async function del(id){ await fetch('/api/events/'+id,{method:'DELETE'}); load(); }
+document.getElementById('f').onsubmit = async ev => {
+  ev.preventDefault();
+  await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name.value,date:date.value,venue:venue.value,category:category.value})});
+  ev.target.reset(); load();
+};
+load();
+</script>
+</body>
+</html>
